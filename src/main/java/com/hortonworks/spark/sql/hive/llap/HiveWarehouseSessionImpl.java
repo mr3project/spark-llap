@@ -153,6 +153,10 @@ public class HiveWarehouseSessionImpl implements com.hortonworks.hwc.HiveWarehou
     }
   }
 
+  public void exportTable(String table, String path) {
+    executeUpdate(HiveQlUtil.exportTableInto(path, DEFAULT_DB.getString(sessionState), table));
+  }
+
   public Dataset<Row> describeTable(String table) {
     return execute(HiveQlUtil.describeTable(DEFAULT_DB.getString(sessionState), table));
   }

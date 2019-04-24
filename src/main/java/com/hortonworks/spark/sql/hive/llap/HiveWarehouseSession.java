@@ -49,6 +49,8 @@ public interface HiveWarehouseSession {
 
     Tuple2<Dataset<Row>, Path> readTable(String table);
 
+    void exportTable(String table, String path);
+
     Dataset<Row> describeTable(String table);
 
     void createDatabase(String database, boolean ifNotExists);

@@ -115,6 +115,10 @@ public class HiveQlUtil {
       return format("INSERT OVERWRITE TABLE %s.%s SELECT * FROM %s.%s", database, destTable, database, sourceTable);
     }
 
+    public static String exportTableInto(String path, String database, String table) {
+      return format("EXPORT TABLE %s.%s TO %s", database, table, path);
+    }
+
     public static String randomAlias() {
         return "q_" + UUID.randomUUID().toString().replaceAll("[^A-Za-z0-9 ]", "");
     }
