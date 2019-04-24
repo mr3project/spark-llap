@@ -107,8 +107,8 @@ public class HiveQlUtil {
       return format("LOAD DATA INPATH '%s' INTO TABLE %s.%s", path, database, table);
     }
 
-    public static String copyTableDefinitionInto(String path, String database, String destTable, String sourceTable) {
-      return format("CREATE EXTERNAL TABLE %s.%s LIKE %s.%s STORED AS ORC LOCATION '%s'", database, destTable, database, sourceTable, path);
+    public static String copyTableDefinitionInto(String path, String database, String destTable, String sourceTable, String format) {
+      return format("CREATE EXTERNAL TABLE %s.%s LIKE %s.%s STORED AS %s LOCATION '%s'", database, destTable, database, sourceTable, format, path);
     }
 
     public static String copyDataInto(String database, String destTable, String sourceTable) {
