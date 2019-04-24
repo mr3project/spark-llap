@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Option;
 
+import java.net.URI;
 import java.sql.Connection;
 import java.util.Map;
 
@@ -67,9 +68,15 @@ public class HiveWarehouseDataSourceWriter implements SupportsWriteInternalRow {
       database = tableRef.databaseName;
       table = tableRef.tableName;
       try (Connection conn = DefaultJDBCWrapper.getConnector(Option.empty(), url, user, dbcp2Configs)) {
+        // String pathWithUri = path.getFileSystem(conf).getUri().toString() + path.toString();
+        URI uri = path.toUri();
+        if (uri.getScheme() == null) {
+          uri = new URI(path.getFileSystem(conf).getUri().toString() + path.toString());
+        }
+        LOG.info("Use Uri: {}", uri.toString());
         createTableIfNeeded(database, table, conn);
-        DefaultJDBCWrapper.executeUpdate(conn, database, loadInto(this.path.toString(), database, table));
-      } catch (java.sql.SQLException e) {
+        DefaultJDBCWrapper.executeUpdate(conn, database, loadInto(uri.toString(), database, table));
+      } catch (java.sql.SQLException | java.io.IOException | java.net.URISyntaxException e) {
         throw new RuntimeException(e);
       }
     } finally {

@@ -17,8 +17,15 @@
 
 package com.hortonworks.spark.sql.hive.llap;
 
+import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.UUID;
 import java.util.Map;
 import java.util.Optional;
+
+import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.spark.sql.SparkSession;
@@ -119,7 +126,7 @@ public enum HWConf {
    */
    public static String getConnectionUrlFromConf(HiveWarehouseSessionState state) {
      SparkSession sparkSession = state.session;
-     if (sparkSession.conf().get(HIVESERVER2_CREDENTIAL_ENABLED, "true").equals("true")) {
+     if (sparkSession.conf().get(HIVESERVER2_CREDENTIAL_ENABLED, "false").equals("true")) {
        // 1. YARN Cluster mode for kerberized clusters
        return format("%s;auth=delegationToken", sparkSession.conf().get(HIVESERVER2_JDBC_URL));
      } else if (sparkSession.conf().contains(HIVESERVER2_JDBC_URL_PRINCIPAL)) {
@@ -133,4 +140,18 @@ public enum HWConf {
      }
    }
 
+   public static Path getStagingDirectoryPath(HiveWarehouseSessionState state) {
+    String jobId = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US)
+      .format(new Date()) + "-" + UUID.randomUUID();
+    Path path = new Path(LOAD_STAGING_DIR.getString(state), jobId);
+    URI uri = path.toUri();
+    try {
+      if (uri.getScheme() == null) {
+        uri = new URI(path.getFileSystem(state.session.sparkContext().hadoopConfiguration()).getUri().toString() + path.toString());
+      }
+    } catch (java.io.IOException | java.net.URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
+    return new Path(uri);
+   }
 }

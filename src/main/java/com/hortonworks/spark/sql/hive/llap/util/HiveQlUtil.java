@@ -107,6 +107,14 @@ public class HiveQlUtil {
       return format("LOAD DATA INPATH '%s' INTO TABLE %s.%s", path, database, table);
     }
 
+    public static String copyTableDefinitionInto(String path, String database, String destTable, String sourceTable) {
+      return format("CREATE EXTERNAL TABLE %s.%s LIKE %s.%s STORED AS ORC LOCATION '%s'", database, destTable, database, sourceTable, path);
+    }
+
+    public static String copyDataInto(String database, String destTable, String sourceTable) {
+      return format("INSERT OVERWRITE TABLE %s.%s SELECT * FROM %s.%s", database, destTable, database, sourceTable);
+    }
+
     public static String randomAlias() {
         return "q_" + UUID.randomUUID().toString().replaceAll("[^A-Za-z0-9 ]", "");
     }

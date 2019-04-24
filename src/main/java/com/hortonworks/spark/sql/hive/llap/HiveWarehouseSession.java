@@ -17,9 +17,11 @@
 
 package com.hortonworks.spark.sql.hive.llap;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import scala.Tuple2;
 
 public interface HiveWarehouseSession {
 
@@ -44,6 +46,8 @@ public interface HiveWarehouseSession {
     Dataset<Row> showDatabases();
 
     Dataset<Row> showTables();
+
+    Tuple2<Dataset<Row>, Path> readTable(String table);
 
     Dataset<Row> describeTable(String table);
 

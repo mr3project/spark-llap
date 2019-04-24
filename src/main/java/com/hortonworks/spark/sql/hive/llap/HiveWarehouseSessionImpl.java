@@ -19,18 +19,19 @@ package com.hortonworks.spark.sql.hive.llap;
 
 import com.hortonworks.spark.sql.hive.llap.util.HiveQlUtil;
 import com.hortonworks.spark.sql.hive.llap.util.TriFunction;
+import org.apache.hadoop.fs.Path;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.DataFrameReader;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import scala.Tuple2;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
 
 import static com.hortonworks.spark.sql.hive.llap.HWConf.*;
-import static com.hortonworks.spark.sql.hive.llap.util.HiveQlUtil.useDatabase;
 
 public class HiveWarehouseSessionImpl implements com.hortonworks.hwc.HiveWarehouseSession {
   static String HIVE_WAREHOUSE_CONNECTOR_INTERNAL = HiveWarehouseSession.HIVE_WAREHOUSE_CONNECTOR;
@@ -119,6 +120,39 @@ public class HiveWarehouseSessionImpl implements com.hortonworks.hwc.HiveWarehou
     return execute(HiveQlUtil.showTables(DEFAULT_DB.getString(sessionState)));
   }
 
+  private Dataset<Row> readDatasetFromPath(Path path) {
+    session().conf().set("spark.sql.orc.impl", "native");
+    Dataset<Row> result = session().read().format("orc").load(path.toString());
+    session().conf().unset("spark.sql.orc.impl");
+    return result;
+  }
+
+  private Boolean copyData(String table, Path path) {
+    String tempTable = table + "_to_spark";
+    Boolean successCreateTable =
+      executeUpdate(HiveQlUtil.copyTableDefinitionInto(path.toString(), DEFAULT_DB.getString(sessionState), tempTable, table));
+    if (successCreateTable) {
+      Boolean successCopyTable =
+        executeUpdate(HiveQlUtil.copyDataInto(DEFAULT_DB.getString(sessionState), tempTable, table));
+      dropTable(tempTable, true, false);
+      return successCopyTable;
+    }
+    else {
+      return false;
+    }
+  }
+
+  public Tuple2<Dataset<Row>, Path> readTable(String table){
+    Path path = HWConf.getStagingDirectoryPath(sessionState);
+    Boolean isWritten = copyData(table, path);
+    if (isWritten) {
+      return new Tuple2<>(readDatasetFromPath(path), path);
+    }
+    else {
+      return new Tuple2<>(session().emptyDataFrame(), path);
+    }
+  }
+
   public Dataset<Row> describeTable(String table) {
     return execute(HiveQlUtil.describeTable(DEFAULT_DB.getString(sessionState), table));
   }
@@ -144,7 +178,4 @@ public class HiveWarehouseSessionImpl implements com.hortonworks.hwc.HiveWarehou
   public CreateTableBuilder createTable(String tableName) {
     return new CreateTableBuilder(this, DEFAULT_DB.getString(sessionState), tableName);
   }
-
-
 }
-
