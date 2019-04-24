@@ -120,17 +120,17 @@ public class HiveWarehouseSessionImpl implements com.hortonworks.hwc.HiveWarehou
     return execute(HiveQlUtil.showTables(DEFAULT_DB.getString(sessionState)));
   }
 
-  private Dataset<Row> readDatasetFromPath(Path path) {
+  private Dataset<Row> readDatasetFromPath(Path path, String format) {
     session().conf().set("spark.sql.orc.impl", "native");
-    Dataset<Row> result = session().read().format("orc").load(path.toString());
+    Dataset<Row> result = session().read().format(format).load(path.toString());
     session().conf().unset("spark.sql.orc.impl");
     return result;
   }
 
-  private Boolean copyData(String table, Path path) {
+  private Boolean copyData(String table, Path path, String format) {
     String tempTable = table + "_to_spark";
     Boolean successCreateTable =
-      executeUpdate(HiveQlUtil.copyTableDefinitionInto(path.toString(), DEFAULT_DB.getString(sessionState), tempTable, table));
+      executeUpdate(HiveQlUtil.copyTableDefinitionInto(path.toString(), DEFAULT_DB.getString(sessionState), tempTable, table, format));
     if (successCreateTable) {
       Boolean successCopyTable =
         executeUpdate(HiveQlUtil.copyDataInto(DEFAULT_DB.getString(sessionState), tempTable, table));
@@ -142,11 +142,11 @@ public class HiveWarehouseSessionImpl implements com.hortonworks.hwc.HiveWarehou
     }
   }
 
-  public Tuple2<Dataset<Row>, Path> readTable(String table){
+  public Tuple2<Dataset<Row>, Path> readTable(String table, String format){
     Path path = HWConf.getStagingDirectoryPath(sessionState);
-    Boolean isWritten = copyData(table, path);
+    Boolean isWritten = copyData(table, path, format);
     if (isWritten) {
-      return new Tuple2<>(readDatasetFromPath(path), path);
+      return new Tuple2<>(readDatasetFromPath(path, format), path);
     }
     else {
       return new Tuple2<>(session().emptyDataFrame(), path);

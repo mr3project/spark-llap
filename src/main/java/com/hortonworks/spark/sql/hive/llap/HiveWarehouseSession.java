@@ -47,7 +47,7 @@ public interface HiveWarehouseSession {
 
     Dataset<Row> showTables();
 
-    Tuple2<Dataset<Row>, Path> readTable(String table);
+    Tuple2<Dataset<Row>, Path> readTable(String table, String format);
 
     void exportTable(String table, String path);
 
