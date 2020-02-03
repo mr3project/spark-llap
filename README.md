@@ -1,3 +1,6 @@
+# HiveWarehouseConnector for MR3
+
+HiveWarehouseConnector extended to support MR3
 
 # HiveWarehouseConnector
 
